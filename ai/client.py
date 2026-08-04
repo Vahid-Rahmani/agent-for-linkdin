@@ -39,12 +39,15 @@ class AIClient:
 
     def _init_client(self):
         try:
-            from google import genai
-            self.client = genai.Client(api_key=self.settings.GOOGLE_GEMINI_API_KEY)
-            console.print("[green]Google Gemini AI client initialized[/green]")
+            from openai import OpenAI
+            self.client = OpenAI(
+                api_key=self.settings.OPENCODE_API_KEY,
+                base_url=self.settings.OPENCODE_BASE_URL,
+            )
+            console.print("[green]OpenCode Zen AI client initialized (Big Pickle model)[/green]")
         except Exception as e:
-            console.print(f"[red]Error initializing Gemini client: {e}[/red]")
-            console.print("[yellow]Please set GOOGLE_GEMINI_API_KEY in .env file[/yellow]")
+            console.print(f"[red]Error initializing OpenCode client: {e}[/red]")
+            console.print("[yellow]Please set OPENCODE_API_KEY in .env file[/yellow]")
 
     async def generate(self, prompt, system_role="linkedin_expert", temperature=0.7):
         if not self.client:
@@ -53,15 +56,16 @@ class AIClient:
         system_prompt = SYSTEM_PROMPTS.get(system_role, SYSTEM_PROMPTS["linkedin_expert"])
 
         try:
-            response = self.client.models.generate_content(
-                model=self.settings.GEMINI_MODEL,
-                contents=f"{system_prompt}\n\nUser request:\n{prompt}",
-                config={
-                    "temperature": temperature,
-                    "max_output_tokens": 2048,
-                },
+            response = self.client.chat.completions.create(
+                model=self.settings.OPENCODE_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=temperature,
+                max_tokens=2048,
             )
-            return response.text
+            return response.choices[0].message.content
         except Exception as e:
             console.print(f"[red]AI generation error: {e}[/red]")
             return f"Error generating response: {e}"

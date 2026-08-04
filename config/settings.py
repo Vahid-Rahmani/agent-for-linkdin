@@ -7,12 +7,13 @@ load_dotenv(BASE_DIR / ".env")
 
 
 class Settings:
-    GOOGLE_GEMINI_API_KEY = os.getenv("GOOGLE_GEMINI_API_KEY", "")
+    OPENCODE_API_KEY = os.getenv("OPENCODE_API_KEY", "")
+    OPENCODE_BASE_URL = "https://opencode.ai/zen/v1"
+    OPENCODE_MODEL = "big-pickle"
     LINKEDIN_PROFILE_URL = os.getenv("LINKEDIN_PROFILE_URL", "https://www.linkedin.com/in/vahid-rahmani-699944417")
     BROWSER_DATA_DIR = str(BASE_DIR / "browser_data")
     STATE_FILE = str(BASE_DIR / "linkedin_state.json")
     DATABASE_PATH = str(BASE_DIR / "linkedin_agent.db")
-    GEMINI_MODEL = "gemini-2.5-flash"
     HEADLESS = False
     MIN_DELAY = 2
     MAX_DELAY = 5
