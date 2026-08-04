@@ -2,7 +2,10 @@ import asyncio
 import random
 from pathlib import Path
 from playwright.async_api import async_playwright, BrowserContext
+from rich.console import Console
 from config.settings import Settings
+
+console = Console()
 
 
 class SessionManager:
@@ -84,11 +87,20 @@ class SessionManager:
         await asyncio.sleep(random.uniform(0.05, 0.15))
 
     async def human_click(self, page, target):
-        await target.scroll_into_view_if_needed()
+        try:
+            await target.scroll_into_view_if_needed(timeout=5000)
+        except Exception:
+            pass
         await asyncio.sleep(random.uniform(0.2, 0.6))
-        box = await target.bounding_box()
+        try:
+            box = await target.bounding_box(timeout=8000)
+        except Exception:
+            box = None
         if not box:
-            await target.click()
+            try:
+                await target.click(timeout=8000)
+            except Exception as e:
+                console.print(f"[yellow]Could not click element: {e}[/yellow]")
             return
         await self.human_move(page, target)
         await asyncio.sleep(random.uniform(0.15, 0.4))

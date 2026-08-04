@@ -50,10 +50,13 @@ class PostUpgrader:
 
             dialog = self.page.locator('div[role="dialog"]')
 
-            editor = dialog.locator('div[contenteditable="true"]').first
+            editor_loc = dialog.locator('div[contenteditable="true"]')
+            if await editor_loc.count() == 0:
+                editor_loc = self.page.locator('div[contenteditable="true"]')
+            editor = editor_loc.first
             await self.session.human_click(self.page, editor)
             await self.page.keyboard.press("Control+a")
-            await self.page.keyboard.press("Delete")
+            await self.page.keyboard.press("Escape")
             await self.session.random_delay(0.5, 1)
 
             await self.session.human_type(self.page, improved)

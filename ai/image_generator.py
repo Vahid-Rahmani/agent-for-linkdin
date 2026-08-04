@@ -173,7 +173,6 @@ Output ONLY the JSON object, no extra text."""
                     }
                     output_path = self._save_image(result)
                     if output_path:
-                        console.print(f"[green]Image saved to {output_path}[/green]")
                         return output_path
                     return None
                 body = response.text or ""
@@ -236,7 +235,6 @@ Output ONLY the JSON object, no extra text."""
                     if isinstance(result, dict):
                         output_path = self._save_image(result)
                         if output_path:
-                            console.print(f"[green]Image saved to {output_path}[/green]")
                             return output_path
                         return None
 
@@ -308,6 +306,7 @@ Output ONLY the JSON object, no extra text."""
             filename = f"post_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}"
             output_path = Path(self.settings.IMAGE_OUTPUT_DIR) / filename
             output_path.write_bytes(result["content"])
+            console.print(f"[green]Image saved to {output_path}[/green]")
             return str(output_path)
         except Exception as e:
             console.print(f"[red]Failed to save image: {e}[/red]")

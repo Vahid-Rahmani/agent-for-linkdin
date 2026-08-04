@@ -7,6 +7,12 @@ import sys
 from rich.console import Console
 from rich.panel import Panel
 
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 console = Console()
 
 

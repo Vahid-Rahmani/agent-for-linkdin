@@ -35,6 +35,18 @@ class Publisher:
 
             dialog = self.page.locator('div[role="dialog"]')
 
+            editor_loc = dialog.locator('div[contenteditable="true"]')
+            if await editor_loc.count() == 0:
+                editor_loc = self.page.locator('div[contenteditable="true"]')
+            if await editor_loc.count() == 0:
+                editor_loc = self.page.get_by_role("textbox", name="Text")
+            editor = editor_loc.first
+            await self.session.human_click(self.page, editor)
+            await asyncio.sleep(1)
+
+            await self.session.human_type(self.page, content)
+            await self.session.random_delay(2, 3)
+
             if image_path and Path(image_path).exists():
                 media_btn = dialog.locator(
                     'button[aria-label="Add media"], '
@@ -42,22 +54,36 @@ class Publisher:
                 ).first
                 await self.session.human_click(self.page, media_btn)
                 file_input = dialog.locator('input[type="file"]').first
-                await file_input.set_files(str(image_path))
+                await file_input.set_input_files(str(image_path))
                 console.print("[blue]Image attached...[/blue]")
-                await asyncio.sleep(5)
+                await asyncio.sleep(2)
                 await self.session.random_delay(3, 5)
 
-            editor = dialog.locator('div[contenteditable="true"]').first
-            await self.session.human_click(self.page, editor)
-            await asyncio.sleep(1)
+            post_button = None
+            for loc in (
+                dialog.locator('button.share-actions__primary-action').filter(has_text="Post"),
+                dialog.get_by_role("button", name="Post"),
+                self.page.get_by_role("button", name="Post"),
+                dialog.locator('button').filter(has_text="Post"),
+            ):
+                try:
+                    if await loc.count() > 0:
+                        post_button = loc
+                        break
+                except Exception:
+                    continue
 
-            await self.session.human_type(self.page, content)
-            await self.session.random_delay(2, 3)
+            if post_button is None:
+                console.print("[red]Post button not found in composer[/red]")
+                self.db.log_action("post_publish", LinkedInUrls.HOME, content[:100], "error: post button not found")
+                return False
 
-            post_button = dialog.locator('button.share-actions__primary-action').filter(has_text="Post")
             for _ in range(20):
-                if await post_button.is_enabled():
-                    break
+                try:
+                    if await post_button.is_enabled():
+                        break
+                except Exception:
+                    pass
                 await asyncio.sleep(0.5)
 
             await self.session.human_click(self.page, post_button)
