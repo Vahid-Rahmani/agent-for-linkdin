@@ -1,6 +1,6 @@
 import asyncio
+from pathlib import Path
 from rich.console import Console
-from rich.prompt import Confirm
 from config.settings import Settings
 from config.constants import LinkedInUrls, LinkedInSelectors
 from database.local_db import Database
@@ -16,14 +16,9 @@ class Publisher:
         self.db = Database()
         self.settings = Settings()
 
-    async def publish_post(self, content, auto_approve=False):
+    async def publish_post(self, content, image_path=None):
         console.print("[bold blue]Preparing to publish post...[/bold blue]")
         console.print(f"\n[bold cyan]Post Content:[/bold cyan]\n{content}\n")
-
-        if not auto_approve:
-            if not Confirm.ask("Do you want to publish this post?"):
-                console.print("[yellow]Post cancelled.[/yellow]")
-                return False
 
         try:
             await self.page.goto(LinkedInUrls.HOME, wait_until="domcontentloaded", timeout=60000)
@@ -39,6 +34,18 @@ class Publisher:
             await self.session.random_delay(2, 3)
 
             dialog = self.page.locator('div[role="dialog"]')
+
+            if image_path and Path(image_path).exists():
+                media_btn = dialog.locator(
+                    'button[aria-label="Add media"], '
+                    'button[aria-label="Add a photo to your post"]'
+                ).first
+                await self.session.human_click(self.page, media_btn)
+                file_input = dialog.locator('input[type="file"]').first
+                await file_input.set_files(str(image_path))
+                console.print("[blue]Image attached...[/blue]")
+                await asyncio.sleep(5)
+                await self.session.random_delay(3, 5)
 
             editor = dialog.locator('div[contenteditable="true"]').first
             await self.session.human_click(self.page, editor)

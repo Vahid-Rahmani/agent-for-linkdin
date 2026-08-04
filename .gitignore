@@ -9,6 +9,9 @@ linkedin_state.json
 *.db
 *.sqlite3
 
+# Generated assets
+assets/images/
+
 # Python
 __pycache__/
 *.py[cod]

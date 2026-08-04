@@ -57,6 +57,38 @@ Make it sound like I'm sharing an exciting development journey."""
         result = await self.ai.generate(prompt, system_role="linkedin_expert")
         return result
 
+    async def generate_post_from_github(self, repo_summary, style="serious"):
+        if style == "funny":
+            requirements = """Write it in a lighthearted, witty, relatable tone (you may joke about the chaos of development, bugs, or silly commit messages).
+Keep it authentic, funny but still professional enough for LinkedIn.
+Use playful emojis and a fun storytelling hook."""
+        else:
+            requirements = """Write it in a professional, insightful, confident tone.
+Highlight the technical challenge, the progress, and the impact.
+Use emojis strategically (max 3)."""
+
+        prompt = f"""Generate a LinkedIn post based on this GitHub repository activity:
+
+{repo_summary}
+
+Tone/STYLE: {requirements}
+
+Formatting requirements:
+1. Start with a compelling hook (first line grabs attention)
+2. Tell a short story around the recent work
+3. Mention specific commits or issues naturally (no raw hashes)
+4. Include a lesson learned or insight
+5. End with a question to encourage comments
+6. Add 5-8 relevant hashtags
+7. 150-300 words with line breaks for readability
+8. Sound authentic and personal
+
+Make it feel like a real developer sharing an update about ongoing work."""
+
+        console.print(f"[blue]Generating LinkedIn post from GitHub activity ({style} style)...[/blue]")
+        result = await self.ai.generate(prompt, system_role="linkedin_expert", temperature=0.8)
+        return result
+
     async def generate_multiple_variations(self, topic, num_variations=3):
         variations = []
         for i in range(num_variations):

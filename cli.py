@@ -74,18 +74,17 @@ async def _monitor():
 
 
 @cli.command()
-@click.argument("topic", required=False)
-@click.option("--context", "-c", help="Additional context for the post")
-@click.option("--auto", is_flag=True, help="Skip approval prompt")
-def post(topic, context, auto):
-    """Generate and publish a LinkedIn post"""
-    asyncio.run(_post(topic, context, auto))
+def post():
+    """Generate & publish a LinkedIn post from GitHub activity (automatic)"""
+    asyncio.run(_post())
 
 
-async def _post(topic, context, auto):
+async def _post():
     from auth.session_manager import SessionManager
     from auth.login_handler import LoginHandler
+    from github.client import GitHubClient
     from ai.post_generator import PostGenerator
+    from ai.image_generator import ImageGenerator
     from automation.publisher import Publisher
 
     session = SessionManager()
@@ -93,11 +92,22 @@ async def _post(topic, context, auto):
         login_handler = LoginHandler(session)
         page = await login_handler.get_page()
 
+        gh = GitHubClient()
+        summary = gh.build_summary()
+        if not summary:
+            summary = "Working on an open-source LinkedIn automation agent in Python."
+
+        image_gen = ImageGenerator()
+        context = await image_gen.analyze_context(summary)
+        image_path = image_gen.generate_image(context)
+
         generator = PostGenerator()
-        content = await generator.generate_post(topic=topic, context=context)
+        content = await generator.generate_post_from_github(summary, style=context["style"])
+
+        console.print(f"\n[bold cyan]Generated Post:[/bold cyan]\n{content}\n")
 
         publisher = Publisher(session, page)
-        await publisher.publish_post(content, auto_approve=auto)
+        await publisher.publish_post(content, image_path=image_path)
 
     finally:
         await session.close()
@@ -106,13 +116,12 @@ async def _post(topic, context, auto):
 @cli.command()
 @click.argument("post_url")
 @click.option("--focus", "-f", default="engagement", help="Focus: engagement, algorithm, or general")
-@click.option("--auto", is_flag=True, help="Skip approval prompt")
-def improve(post_url, focus, auto):
+def improve(post_url, focus):
     """Improve an existing LinkedIn post"""
-    asyncio.run(_improve(post_url, focus, auto))
+    asyncio.run(_improve(post_url, focus))
 
 
-async def _improve(post_url, focus, auto):
+async def _improve(post_url, focus):
     from auth.session_manager import SessionManager
     from auth.login_handler import LoginHandler
     from automation.post_upgrader import PostUpgrader
@@ -123,20 +132,19 @@ async def _improve(post_url, focus, auto):
         page = await login_handler.get_page()
 
         upgrader = PostUpgrader(session, page)
-        await upgrader.improve_post(post_url, focus=focus, auto_approve=auto)
+        await upgrader.improve_post(post_url, focus=focus)
 
     finally:
         await session.close()
 
 
 @cli.command()
-@click.option("--auto", is_flag=True, help="Skip approval prompts")
-def reply(auto):
+def reply():
     """Reply to pending comments and messages"""
-    asyncio.run(_reply(auto))
+    asyncio.run(_reply())
 
 
-async def _reply(auto):
+async def _reply():
     from auth.session_manager import SessionManager
     from auth.login_handler import LoginHandler
     from automation.comment_responder import CommentResponder
@@ -148,11 +156,11 @@ async def _reply(auto):
         page = await login_handler.get_page()
 
         comment_resp = CommentResponder(session, page)
-        comment_results = await comment_resp.respond_to_all_pending(auto_approve=auto)
+        comment_results = await comment_resp.respond_to_all_pending()
         console.print(f"[green]Comment replies: {sum(comment_results)} sent[/green]")
 
         msg_resp = MessageResponder(session, page)
-        msg_results = await msg_resp.respond_to_all_pending(auto_approve=auto)
+        msg_results = await msg_resp.respond_to_all_pending()
         console.print(f"[green]Message replies: {sum(msg_results)} sent[/green]")
 
     finally:
@@ -168,13 +176,12 @@ def report():
 
 
 @cli.command()
-@click.option("--auto", is_flag=True, help="Skip all approval prompts")
-def run(auto):
-    """Run full automation cycle: monitor -> generate -> reply -> report"""
-    asyncio.run(_run(auto))
+def run():
+    """Run full automation cycle: monitor -> auto-post -> reply -> report"""
+    asyncio.run(_run())
 
 
-async def _run(auto):
+async def _run():
     from auth.session_manager import SessionManager
     from auth.login_handler import LoginHandler
     from monitor.profile_monitor import ProfileMonitor
@@ -183,6 +190,10 @@ async def _run(auto):
     from monitor.message_monitor import MessageMonitor
     from automation.comment_responder import CommentResponder
     from automation.message_responder import MessageResponder
+    from automation.publisher import Publisher
+    from github.client import GitHubClient
+    from ai.post_generator import PostGenerator
+    from ai.image_generator import ImageGenerator
     from reports.report_generator import ReportGenerator
 
     session = SessionManager()
@@ -205,12 +216,29 @@ async def _run(auto):
 
         console.print("\n[bold]Phase 2: Responding to comments & messages...[/bold]")
         comment_resp = CommentResponder(session, page)
-        await comment_resp.respond_to_all_pending(auto_approve=auto)
+        await comment_resp.respond_to_all_pending()
 
         msg_resp = MessageResponder(session, page)
-        await msg_resp.respond_to_all_pending(auto_approve=auto)
+        await msg_resp.respond_to_all_pending()
 
-        console.print("\n[bold]Phase 3: Generating report...[/bold]")
+        console.print("\n[bold]Phase 3: Auto-posting from GitHub activity...[/bold]")
+        gh = GitHubClient()
+        summary = gh.build_summary()
+        if not summary:
+            summary = "Working on an open-source LinkedIn automation agent in Python."
+
+        image_gen = ImageGenerator()
+        context = await image_gen.analyze_context(summary)
+        image_path = image_gen.generate_image(context)
+
+        generator = PostGenerator()
+        content = await generator.generate_post_from_github(summary, style=context["style"])
+        console.print(f"\n[bold cyan]Generated Post:[/bold cyan]\n{content}\n")
+
+        publisher = Publisher(session, page)
+        await publisher.publish_post(content, image_path=image_path)
+
+        console.print("\n[bold]Phase 4: Generating report...[/bold]")
         reporter = ReportGenerator()
         reporter.generate_report()
 

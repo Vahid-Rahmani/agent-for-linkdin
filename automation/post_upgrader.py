@@ -1,6 +1,5 @@
 import asyncio
 from rich.console import Console
-from rich.prompt import Confirm
 from config.settings import Settings
 from database.local_db import Database
 from auth.session_manager import SessionManager
@@ -17,7 +16,7 @@ class PostUpgrader:
         self.settings = Settings()
         self.ai_improver = PostImprover()
 
-    async def improve_post(self, post_url, focus="engagement", auto_approve=False):
+    async def improve_post(self, post_url, focus="engagement"):
         console.print(f"[bold blue]Improving post at: {post_url}[/bold blue]")
 
         try:
@@ -43,11 +42,6 @@ class PostUpgrader:
                 improved = await self.ai_improver.improve_post(original_content, focus)
 
             console.print(f"\n[bold green]Improved Version:[/bold green]\n{improved}\n")
-
-            if not auto_approve:
-                if not Confirm.ask("Apply this improvement?"):
-                    console.print("[yellow]Improvement cancelled.[/yellow]")
-                    return False
 
             edit_btn = self.page.get_by_role("button", name="Edit")
             await self.session.human_click(self.page, edit_btn)

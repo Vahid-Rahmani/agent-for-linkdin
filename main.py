@@ -66,17 +66,29 @@ async def main():
             await msg_monitor.scan_messages()
 
         elif command == "post":
-            topic = sys.argv[2] if len(sys.argv) > 2 else None
             page = await _get_page(session)
 
+            from github.client import GitHubClient
+            from ai.post_generator import PostGenerator
+            from ai.image_generator import ImageGenerator
+            from automation.publisher import Publisher
+
+            gh = GitHubClient()
+            summary = gh.build_summary()
+            if not summary:
+                summary = "Working on an open-source LinkedIn automation agent in Python."
+
+            image_gen = ImageGenerator()
+            context = await image_gen.analyze_context(summary)
+            image_path = image_gen.generate_image(context)
+
             generator = PostGenerator()
-            content = await generator.generate_post(topic=topic)
+            content = await generator.generate_post_from_github(summary, style=context["style"])
 
             console.print(f"\n[bold cyan]Generated Post:[/bold cyan]\n{content}\n")
 
-            from automation.publisher import Publisher
             publisher = Publisher(session, page)
-            await publisher.publish_post(content)
+            await publisher.publish_post(content, image_path=image_path)
 
         elif command == "reply":
             page = await _get_page(session)
@@ -114,7 +126,29 @@ async def main():
             msg_resp = MessageResponder(session, page)
             await msg_resp.respond_to_all_pending()
 
-            console.print("\n[bold]Phase 3: Report...[/bold]")
+            console.print("\n[bold]Phase 3: Auto-posting from GitHub activity...[/bold]")
+            from github.client import GitHubClient
+            from ai.post_generator import PostGenerator
+            from ai.image_generator import ImageGenerator
+            from automation.publisher import Publisher
+
+            gh = GitHubClient()
+            summary = gh.build_summary()
+            if not summary:
+                summary = "Working on an open-source LinkedIn automation agent in Python."
+
+            image_gen = ImageGenerator()
+            context = await image_gen.analyze_context(summary)
+            image_path = image_gen.generate_image(context)
+
+            generator = PostGenerator()
+            content = await generator.generate_post_from_github(summary, style=context["style"])
+            console.print(f"\n[bold cyan]Generated Post:[/bold cyan]\n{content}\n")
+
+            publisher = Publisher(session, page)
+            await publisher.publish_post(content, image_path=image_path)
+
+            console.print("\n[bold]Phase 4: Report...[/bold]")
             reporter = ReportGenerator()
             reporter.generate_report()
 

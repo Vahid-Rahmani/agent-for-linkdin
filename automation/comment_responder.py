@@ -1,6 +1,5 @@
 import asyncio
 from rich.console import Console
-from rich.prompt import Confirm
 from config.settings import Settings
 from database.local_db import Database
 from auth.session_manager import SessionManager
@@ -17,19 +16,13 @@ class CommentResponder:
         self.settings = Settings()
         self.ai_drafter = ReplyDrafter()
 
-    async def respond_to_comment(self, comment, post_context, auto_approve=False):
+    async def respond_to_comment(self, comment, post_context):
         draft = await self.ai_drafter.draft_reply_to_comment(comment, post_context)
 
         console.print(f"\n[bold cyan]Comment from {comment.get('author', 'Unknown')}:[/bold cyan]")
         console.print(f"  {comment.get('content', '')}")
         console.print(f"\n[bold green]AI Draft Reply:[/bold green]")
         console.print(f"  {draft}\n")
-
-        if not auto_approve:
-            if not Confirm.ask("Send this reply?"):
-                console.print("[yellow]Reply skipped.[/yellow]")
-                self.db.mark_comment_processed(comment["id"], draft)
-                return False
 
         try:
             post_url = comment.get("post_url", "")
@@ -67,7 +60,7 @@ class CommentResponder:
             console.print(f"[red]Error sending reply: {e}[/red]")
             return False
 
-    async def respond_to_all_pending(self, auto_approve=False):
+    async def respond_to_all_pending(self):
         pending = self.db.get_unprocessed_comments()
         if not pending:
             console.print("[yellow]No pending comments to respond to.[/yellow]")
@@ -77,7 +70,7 @@ class CommentResponder:
         results = []
 
         for comment in pending[:self.settings.MAX_COMMENTS_PER_HOUR]:
-            result = await self.respond_to_comment(comment, "", auto_approve)
+            result = await self.respond_to_comment(comment, "")
             results.append(result)
             await self.session.random_delay(3, 7)
 
