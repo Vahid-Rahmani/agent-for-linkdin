@@ -46,6 +46,11 @@ class MessageResponder:
                 await self.session.random_delay(1, 2)
 
                 send_btn = self.page.get_by_role("button", name="Send")
+                for _ in range(20):
+                    if await send_btn.is_enabled():
+                        break
+                    await asyncio.sleep(0.5)
+
                 await send_btn.click()
                 await self.session.random_delay(2, 3)
 

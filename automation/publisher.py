@@ -35,7 +35,9 @@ class Publisher:
             await asyncio.sleep(3)
             await self.session.random_delay(2, 3)
 
-            editor = self.page.get_by_role("textbox", name="Text editor for creating content")
+            dialog = self.page.locator('div[role="dialog"]')
+
+            editor = dialog.locator('div[contenteditable="true"]').first
             await editor.click()
             await asyncio.sleep(1)
             await self.session.random_delay(1, 2)
@@ -43,7 +45,12 @@ class Publisher:
             await self.page.keyboard.type(content, delay=30)
             await self.session.random_delay(2, 3)
 
-            post_button = self.page.get_by_role("button", name="Post")
+            post_button = dialog.get_by_role("button", name="Post")
+            for _ in range(20):
+                if await post_button.is_enabled():
+                    break
+                await asyncio.sleep(0.5)
+
             await post_button.click()
             await self.session.random_delay(3, 5)
 

@@ -54,7 +54,9 @@ class PostUpgrader:
             await asyncio.sleep(3)
             await self.session.random_delay(2, 3)
 
-            editor = self.page.get_by_role("textbox")
+            dialog = self.page.locator('div[role="dialog"]')
+
+            editor = dialog.locator('div[contenteditable="true"]').first
             await editor.click()
             await self.page.keyboard.press("Control+a")
             await self.page.keyboard.press("Delete")
@@ -63,7 +65,12 @@ class PostUpgrader:
             await self.page.keyboard.type(improved, delay=30)
             await self.session.random_delay(2, 3)
 
-            save_btn = self.page.get_by_role("button", name="Save")
+            save_btn = dialog.get_by_role("button", name="Save")
+            for _ in range(20):
+                if await save_btn.is_enabled():
+                    break
+                await asyncio.sleep(0.5)
+
             await save_btn.click()
             await self.session.random_delay(3, 5)
 
