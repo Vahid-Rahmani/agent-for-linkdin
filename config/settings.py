@@ -23,5 +23,7 @@ class Settings:
     GITHUB_REPO = os.getenv("GITHUB_REPO", "Vahid-Rahmani/agent-for-linkdin")
     GITHUB_API_URL = os.getenv("GITHUB_API_URL", "https://api.github.com")
     IMAGE_OUTPUT_DIR = str(BASE_DIR / "assets" / "images")
-    IMAGE_WIDTH = 1200
-    IMAGE_HEIGHT = 628
+    IMAGE_WIDTH = int(os.getenv("IMAGE_WIDTH", "1024"))
+    IMAGE_HEIGHT = int(os.getenv("IMAGE_HEIGHT", "1024"))
+    IMAGE_MODEL = os.getenv("IMAGE_MODEL", "turbo")
+    POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY", "")
