@@ -1,3 +1,4 @@
+from pathlib import Path
 from rich.console import Console
 from config.settings import Settings
 from config.constants import LinkedInUrls, LinkedInSelectors
@@ -45,6 +46,3 @@ class LoginHandler:
             return await self.auto_login()
         else:
             return await self.manual_login()
-
-
-from pathlib import Path
