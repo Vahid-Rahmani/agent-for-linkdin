@@ -30,19 +30,21 @@ class Publisher:
             await asyncio.sleep(3)
             await self.session.random_delay(3, 5)
 
+            await self.session.human_scroll(self.page)
+            await self.session.human_delay(0.5, 1.5)
+
             start_post = self.page.get_by_role("button", name="Start a post")
-            await start_post.click()
+            await self.session.human_click(self.page, start_post)
             await asyncio.sleep(3)
             await self.session.random_delay(2, 3)
 
             dialog = self.page.locator('div[role="dialog"]')
 
             editor = dialog.locator('div[contenteditable="true"]').first
-            await editor.click()
+            await self.session.human_click(self.page, editor)
             await asyncio.sleep(1)
-            await self.session.random_delay(1, 2)
 
-            await self.page.keyboard.type(content, delay=30)
+            await self.session.human_type(self.page, content)
             await self.session.random_delay(2, 3)
 
             post_button = dialog.get_by_role("button", name="Post")
@@ -51,7 +53,7 @@ class Publisher:
                     break
                 await asyncio.sleep(0.5)
 
-            await post_button.click()
+            await self.session.human_click(self.page, post_button)
             await self.session.random_delay(3, 5)
 
             self.db.log_action("post_publish", LinkedInUrls.HOME, content[:100], "success")

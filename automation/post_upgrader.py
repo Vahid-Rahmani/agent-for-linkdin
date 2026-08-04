@@ -50,19 +50,19 @@ class PostUpgrader:
                     return False
 
             edit_btn = self.page.get_by_role("button", name="Edit")
-            await edit_btn.click()
+            await self.session.human_click(self.page, edit_btn)
             await asyncio.sleep(3)
             await self.session.random_delay(2, 3)
 
             dialog = self.page.locator('div[role="dialog"]')
 
             editor = dialog.locator('div[contenteditable="true"]').first
-            await editor.click()
+            await self.session.human_click(self.page, editor)
             await self.page.keyboard.press("Control+a")
             await self.page.keyboard.press("Delete")
             await self.session.random_delay(0.5, 1)
 
-            await self.page.keyboard.type(improved, delay=30)
+            await self.session.human_type(self.page, improved)
             await self.session.random_delay(2, 3)
 
             save_btn = dialog.get_by_role("button", name="Save")
@@ -71,7 +71,7 @@ class PostUpgrader:
                     break
                 await asyncio.sleep(0.5)
 
-            await save_btn.click()
+            await self.session.human_click(self.page, save_btn)
             await self.session.random_delay(3, 5)
 
             self.db.log_action(

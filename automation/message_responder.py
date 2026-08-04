@@ -40,9 +40,9 @@ class MessageResponder:
                 await self.session.random_delay(2, 4)
 
                 msg_input = self.page.get_by_role("textbox", name="Write a message…")
-                await msg_input.click()
+                await self.session.human_click(self.page, msg_input)
                 await asyncio.sleep(1)
-                await self.page.keyboard.type(draft, delay=30)
+                await self.session.human_type(self.page, draft)
                 await self.session.random_delay(1, 2)
 
                 send_btn = self.page.get_by_role("button", name="Send")
@@ -51,7 +51,7 @@ class MessageResponder:
                         break
                     await asyncio.sleep(0.5)
 
-                await send_btn.click()
+                await self.session.human_click(self.page, send_btn)
                 await self.session.random_delay(2, 3)
 
                 self.db.mark_message_responded(message["id"])

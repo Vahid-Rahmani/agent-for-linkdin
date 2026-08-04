@@ -39,17 +39,17 @@ class CommentResponder:
                 await self.session.random_delay(2, 4)
 
                 reply_btn = self.page.get_by_role("button", name="Reply")
-                await reply_btn.first.click()
+                await self.session.human_click(self.page, reply_btn.first)
                 await asyncio.sleep(2)
                 await self.session.random_delay(1, 2)
 
                 comment_box = self.page.get_by_role("textbox", name="Add a comment…")
-                await comment_box.click()
-                await self.page.keyboard.type(draft, delay=30)
+                await self.session.human_click(self.page, comment_box)
+                await self.session.human_type(self.page, draft)
                 await self.session.random_delay(1, 2)
 
                 submit_btn = self.page.get_by_role("button", name="Post")
-                await submit_btn.click()
+                await self.session.human_click(self.page, submit_btn)
                 await self.session.random_delay(2, 3)
 
                 self.db.mark_comment_responded(comment["id"])
