@@ -33,13 +33,15 @@ class Publisher:
             start_post = await self.page.query_selector("button.share-box-feed-entry__trigger")
             if start_post:
                 await start_post.click()
+                await asyncio.sleep(3)
                 await self.session.random_delay(2, 3)
 
             editor = await self.page.wait_for_selector(
-                "div.share-creation-state__editor, div.ql-editor", timeout=10000
+                "div.share-creation-state__editor, div.ql-editor, div[contenteditable='true']", timeout=30000
             )
             if editor:
                 await editor.click()
+                await asyncio.sleep(1)
                 await self.session.random_delay(1, 2)
 
                 await editor.fill("")
