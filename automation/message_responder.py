@@ -35,7 +35,8 @@ class MessageResponder:
         try:
             conv_url = message.get("sender_profile", "")
             if conv_url:
-                await self.page.goto(conv_url, wait_until="networkidle")
+                await self.page.goto(conv_url, wait_until="domcontentloaded", timeout=60000)
+                await asyncio.sleep(3)
                 await self.session.random_delay(2, 4)
 
                 msg_input = await self.page.query_selector(

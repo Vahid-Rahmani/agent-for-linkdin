@@ -34,7 +34,8 @@ class CommentResponder:
         try:
             post_url = comment.get("post_url", "")
             if post_url:
-                await self.page.goto(post_url, wait_until="networkidle")
+                await self.page.goto(post_url, wait_until="domcontentloaded", timeout=60000)
+                await asyncio.sleep(3)
                 await self.session.random_delay(2, 4)
 
                 reply_buttons = await self.page.query_selector_all(

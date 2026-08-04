@@ -26,7 +26,8 @@ class Publisher:
                 return False
 
         try:
-            await self.page.goto(LinkedInUrls.HOME, wait_until="networkidle")
+            await self.page.goto(LinkedInUrls.HOME, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
             await self.session.random_delay(3, 5)
 
             start_post = await self.page.query_selector("button.share-box-feed-entry__trigger")

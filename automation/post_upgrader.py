@@ -21,7 +21,8 @@ class PostUpgrader:
         console.print(f"[bold blue]Improving post at: {post_url}[/bold blue]")
 
         try:
-            await self.page.goto(post_url, wait_until="networkidle")
+            await self.page.goto(post_url, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
             await self.session.random_delay(3, 5)
 
             content_el = await self.page.query_selector(
