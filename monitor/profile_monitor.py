@@ -15,8 +15,8 @@ class ProfileMonitor:
 
     async def get_profile_views(self):
         try:
-            await self.page.goto(self.settings.LINKEDIN_PROFILE_URL, wait_until="networkidle")
-            await self.session.random_delay(2, 4)
+            await self.page.goto(self.settings.LINKEDIN_PROFILE_URL, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
 
             views = "N/A"
             try:
@@ -33,8 +33,8 @@ class ProfileMonitor:
 
     async def get_search_appearances(self):
         try:
-            await self.page.goto(self.settings.LINKEDIN_PROFILE_URL, wait_until="networkidle")
-            await self.session.random_delay(2, 4)
+            await self.page.goto(self.settings.LINKEDIN_PROFILE_URL, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
 
             appearances = "N/A"
             try:
@@ -51,8 +51,8 @@ class ProfileMonitor:
 
     async def get_connection_count(self):
         try:
-            await self.page.goto(self.settings.LINKEDIN_PROFILE_URL, wait_until="networkidle")
-            await self.session.random_delay(2, 4)
+            await self.page.goto(self.settings.LINKEDIN_PROFILE_URL, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
 
             count = "N/A"
             try:

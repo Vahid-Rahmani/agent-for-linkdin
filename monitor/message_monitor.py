@@ -17,8 +17,8 @@ class MessageMonitor:
 
     async def scan_messages(self):
         try:
-            await self.page.goto(LinkedInUrls.MESSAGES, wait_until="networkidle")
-            await self.session.random_delay(3, 5)
+            await self.page.goto(LinkedInUrls.MESSAGES, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
 
             messages = []
             conversation_elements = await self.page.query_selector_all("li.occludable-update")
@@ -63,8 +63,8 @@ class MessageMonitor:
 
     async def _read_conversation(self, conv_url):
         try:
-            await self.page.goto(conv_url, wait_until="networkidle")
-            await self.session.random_delay(2, 3)
+            await self.page.goto(conv_url, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
 
             messages = []
             msg_elements = await self.page.query_selector_all("div.msg-s-event-list")

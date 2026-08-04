@@ -16,8 +16,8 @@ class CommentMonitor:
 
     async def scan_comments_on_post(self, post_url):
         try:
-            await self.page.goto(post_url, wait_until="networkidle")
-            await self.session.random_delay(3, 5)
+            await self.page.goto(post_url, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
 
             comments = []
             comment_elements = await self.page.query_selector_all("div.comments-comment-item")

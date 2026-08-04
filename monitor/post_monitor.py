@@ -17,8 +17,8 @@ class PostMonitor:
 
     async def get_my_posts(self):
         try:
-            await self.page.goto(self.settings.LINKEDIN_PROFILE_URL, wait_until="networkidle")
-            await self.session.random_delay(3, 5)
+            await self.page.goto(self.settings.LINKEDIN_PROFILE_URL, wait_until="domcontentloaded", timeout=60000)
+            await asyncio.sleep(3)
 
             posts = []
             post_elements = await self.page.query_selector_all("div.feed-shared-update-v2")
