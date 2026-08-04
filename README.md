@@ -167,7 +167,7 @@ agent/
 - [x] SQLite database for local storage
 
 ### Phase 3: AI Brain (Professional Content Generation)
-- [x] OpenCode Zen API integration (free, Big Pickle model)
+- [x] Gmini Free API
 - [x] Post generator with engineered prompts
 - [x] Post improver (engagement, algorithm optimization)
 - [x] Reply drafter for comments and messages
