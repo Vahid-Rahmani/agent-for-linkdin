@@ -189,8 +189,6 @@ Output ONLY the JSON object, no extra text."""
         height = self.settings.IMAGE_HEIGHT
         if width == height:
             return [(width, height)]
-        if self._api_key:
-            return [(width, height)]
         return [(width, height), SQUARE_FALLBACK]
 
     def _remaining_models(self, current_model):
