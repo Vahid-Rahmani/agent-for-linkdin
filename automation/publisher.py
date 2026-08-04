@@ -47,7 +47,7 @@ class Publisher:
             await self.session.human_type(self.page, content)
             await self.session.random_delay(2, 3)
 
-            post_button = dialog.get_by_role("button", name="Post")
+            post_button = dialog.locator('button.share-actions__primary-action').filter(has_text="Post")
             for _ in range(20):
                 if await post_button.is_enabled():
                     break

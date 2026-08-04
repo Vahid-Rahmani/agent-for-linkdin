@@ -65,7 +65,7 @@ class PostUpgrader:
             await self.session.human_type(self.page, improved)
             await self.session.random_delay(2, 3)
 
-            save_btn = dialog.get_by_role("button", name="Save")
+            save_btn = dialog.locator('button.share-actions__primary-action').filter(has_text="Save")
             for _ in range(20):
                 if await save_btn.is_enabled():
                     break
