@@ -49,45 +49,29 @@ class PostUpgrader:
                     console.print("[yellow]Improvement cancelled.[/yellow]")
                     return False
 
-            edit_btn = await self.page.query_selector(
-                "button.feed-shared-update-v2__edit-btn, button[aria-label='Edit']"
+            edit_btn = self.page.get_by_role("button", name="Edit")
+            await edit_btn.click()
+            await asyncio.sleep(3)
+            await self.session.random_delay(2, 3)
+
+            editor = self.page.get_by_role("textbox")
+            await editor.click()
+            await self.page.keyboard.press("Control+a")
+            await self.page.keyboard.press("Delete")
+            await self.session.random_delay(0.5, 1)
+
+            await self.page.keyboard.type(improved, delay=30)
+            await self.session.random_delay(2, 3)
+
+            save_btn = self.page.get_by_role("button", name="Save")
+            await save_btn.click()
+            await self.session.random_delay(3, 5)
+
+            self.db.log_action(
+                "post_upgrade", post_url, improved[:100], "success"
             )
-            if edit_btn:
-                await edit_btn.click()
-                await asyncio.sleep(3)
-                await self.session.random_delay(2, 3)
-
-                editor = await self.page.wait_for_selector(
-                    'div[role="textbox"][contenteditable="true"], '
-                    'div.ql-editor[data-placeholder], '
-                    'div[aria-label*="Text editor"], '
-                    'div[aria-label*="Edit"]',
-                    timeout=30000
-                )
-                if editor:
-                    await editor.click()
-                    await self.page.keyboard.press("Control+a")
-                    await self.page.keyboard.press("Delete")
-                    await self.session.random_delay(0.5, 1)
-
-                    await self.page.keyboard.type(improved, delay=30)
-                    await self.session.random_delay(2, 3)
-
-                    save_btn = await self.page.query_selector(
-                        "button.share-actions__primary-action"
-                    )
-                    if save_btn:
-                        await save_btn.click()
-                        await self.session.random_delay(3, 5)
-
-                        self.db.log_action(
-                            "post_upgrade", post_url, improved[:100], "success"
-                        )
-                        console.print("[bold green]Post updated successfully![/bold green]")
-                        return True
-
-            console.print("[red]Could not edit post (might be older than 1 hour)[/red]")
-            return False
+            console.print("[bold green]Post updated successfully![/bold green]")
+            return True
 
         except Exception as e:
             console.print(f"[red]Error improving post: {e}[/red]")

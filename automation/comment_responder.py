@@ -38,38 +38,27 @@ class CommentResponder:
                 await asyncio.sleep(3)
                 await self.session.random_delay(2, 4)
 
-                reply_buttons = await self.page.query_selector_all(
-                    'button[aria-label*="Reply"], button.comments-comment-item__reply-button'
+                reply_btn = self.page.get_by_role("button", name="Reply")
+                await reply_btn.first.click()
+                await asyncio.sleep(2)
+                await self.session.random_delay(1, 2)
+
+                comment_box = self.page.get_by_role("textbox", name="Add a comment…")
+                await comment_box.click()
+                await self.page.keyboard.type(draft, delay=30)
+                await self.session.random_delay(1, 2)
+
+                submit_btn = self.page.get_by_role("button", name="Post")
+                await submit_btn.click()
+                await self.session.random_delay(2, 3)
+
+                self.db.mark_comment_responded(comment["id"])
+                self.db.mark_comment_processed(comment["id"], draft)
+                self.db.log_action(
+                    "comment_reply", post_url, draft[:100], "success"
                 )
-                if reply_buttons:
-                    await reply_buttons[0].click()
-                    await asyncio.sleep(2)
-                    await self.session.random_delay(1, 2)
-
-                comment_box = await self.page.query_selector(
-                    'textarea[aria-label*="Comment"], '
-                    'div[role="textbox"][contenteditable="true"], '
-                    'textarea.comments-comment-box__input'
-                )
-                if comment_box:
-                    await comment_box.click()
-                    await self.page.keyboard.type(draft, delay=30)
-                    await self.session.random_delay(1, 2)
-
-                    submit_btn = await self.page.query_selector(
-                        "button.comments-comment-box__submit-button"
-                    )
-                    if submit_btn:
-                        await submit_btn.click()
-                        await self.session.random_delay(2, 3)
-
-                        self.db.mark_comment_responded(comment["id"])
-                        self.db.mark_comment_processed(comment["id"], draft)
-                        self.db.log_action(
-                            "comment_reply", post_url, draft[:100], "success"
-                        )
-                        console.print("[green]Reply sent![/green]")
-                        return True
+                console.print("[green]Reply sent![/green]")
+                return True
 
             console.print("[red]Could not send reply[/red]")
             return False

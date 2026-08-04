@@ -39,31 +39,23 @@ class MessageResponder:
                 await asyncio.sleep(3)
                 await self.session.random_delay(2, 4)
 
-                msg_input = await self.page.query_selector(
-                    'div[role="textbox"][contenteditable="true"], '
-                    'textarea[aria-label*="Message"], '
-                    'textarea.msg-form__contenteditable'
+                msg_input = self.page.get_by_role("textbox", name="Write a message…")
+                await msg_input.click()
+                await asyncio.sleep(1)
+                await self.page.keyboard.type(draft, delay=30)
+                await self.session.random_delay(1, 2)
+
+                send_btn = self.page.get_by_role("button", name="Send")
+                await send_btn.click()
+                await self.session.random_delay(2, 3)
+
+                self.db.mark_message_responded(message["id"])
+                self.db.mark_message_processed(message["id"], draft)
+                self.db.log_action(
+                    "message_reply", conv_url, draft[:100], "success"
                 )
-                if msg_input:
-                    await msg_input.click()
-                    await asyncio.sleep(1)
-                    await self.page.keyboard.type(draft, delay=30)
-                    await self.session.random_delay(1, 2)
-
-                    send_btn = await self.page.query_selector(
-                        'button[aria-label*="Send"], button.msg-form__send-button'
-                    )
-                    if send_btn:
-                        await send_btn.click()
-                        await self.session.random_delay(2, 3)
-
-                        self.db.mark_message_responded(message["id"])
-                        self.db.mark_message_processed(message["id"], draft)
-                        self.db.log_action(
-                            "message_reply", conv_url, draft[:100], "success"
-                        )
-                        console.print("[green]Message sent![/green]")
-                        return True
+                console.print("[green]Message sent![/green]")
+                return True
 
             console.print("[red]Could not send message[/red]")
             return False

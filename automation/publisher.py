@@ -30,41 +30,26 @@ class Publisher:
             await asyncio.sleep(3)
             await self.session.random_delay(3, 5)
 
-            start_post = await self.page.query_selector('button[aria-label="Start a post"]')
-            if start_post:
-                await start_post.click()
-                await asyncio.sleep(3)
-                await self.session.random_delay(2, 3)
+            start_post = self.page.get_by_role("button", name="Start a post")
+            await start_post.click()
+            await asyncio.sleep(3)
+            await self.session.random_delay(2, 3)
 
-            editor = await self.page.wait_for_selector(
-                'div[role="textbox"][contenteditable="true"], '
-                'div.ql-editor[data-placeholder], '
-                'div[aria-label*="Text editor"], '
-                'div[aria-label*="Create a post"]',
-                timeout=30000
-            )
-            if editor:
-                await editor.click()
-                await asyncio.sleep(1)
-                await self.session.random_delay(1, 2)
+            editor = self.page.get_by_role("textbox", name="Text editor for creating content")
+            await editor.click()
+            await asyncio.sleep(1)
+            await self.session.random_delay(1, 2)
 
-                await self.page.keyboard.type(content, delay=30)
-                await self.session.random_delay(2, 3)
+            await self.page.keyboard.type(content, delay=30)
+            await self.session.random_delay(2, 3)
 
-            post_button = await self.page.query_selector(
-                'button.share-actions__primary-action, '
-                'button[aria-label="Post"]'
-            )
-            if post_button:
-                await post_button.click()
-                await self.session.random_delay(3, 5)
+            post_button = self.page.get_by_role("button", name="Post")
+            await post_button.click()
+            await self.session.random_delay(3, 5)
 
-                self.db.log_action("post_publish", LinkedInUrls.HOME, content[:100], "success")
-                console.print("[bold green]Post published successfully![/bold green]")
-                return True
-            else:
-                console.print("[red]Could not find Post button[/red]")
-                return False
+            self.db.log_action("post_publish", LinkedInUrls.HOME, content[:100], "success")
+            console.print("[bold green]Post published successfully![/bold green]")
+            return True
 
         except Exception as e:
             console.print(f"[red]Error publishing post: {e}[/red]")
