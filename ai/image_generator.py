@@ -23,6 +23,8 @@ MAX_ATTEMPTS = 4
 RETRY_TIMEOUT = 120
 TOTAL_DEADLINE = 180
 SQUARE_FALLBACK = (1024, 1024)
+HF_MAX_ATTEMPTS = 3
+HF_TIMEOUT = 180
 
 
 class ImageGenerator:
@@ -121,6 +123,81 @@ Output ONLY the JSON object, no extra text."""
         return f"{style_prefix}, {base}"
 
     def generate_image(self, context):
+        prompt = self.build_prompt(context)
+        output_dir = Path(self.settings.IMAGE_OUTPUT_DIR)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.settings.HF_TOKEN:
+            console.print(
+                f"[blue]Generating image via Hugging Face ({self.settings.HF_MODEL}, "
+                f"{context.get('style')} style)...[/blue]"
+            )
+            result = self._generate_via_hf(prompt, output_dir)
+            if result:
+                return result
+            console.print("[yellow]Hugging Face failed, falling back to Pollinations.ai...[/yellow]")
+        else:
+            console.print("[yellow]No HF_TOKEN set, using Pollinations.ai...[/yellow]")
+
+        return self._generate_via_pollinations(context)
+
+    def _generate_via_hf(self, prompt, output_dir):
+        import time
+
+        import requests
+
+        url = f"{self.settings.HF_API_URL}/{self.settings.HF_MODEL}"
+        headers = {
+            "Authorization": f"Bearer {self.settings.HF_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "width": self.settings.IMAGE_WIDTH,
+                "height": self.settings.IMAGE_HEIGHT,
+                "num_inference_steps": 28,
+                "guidance_scale": 5.0,
+                "negative_prompt": "blurry, low quality, text, watermark, logo",
+            },
+            "options": {"wait_for_model": True},
+        }
+
+        for attempt in range(1, HF_MAX_ATTEMPTS + 1):
+            try:
+                response = requests.post(url, headers=headers, json=payload, timeout=HF_TIMEOUT)
+                if response.status_code == 200 and response.content:
+                    result = {
+                        "content": response.content,
+                        "content_type": response.headers.get("Content-Type", ""),
+                    }
+                    output_path = self._save_image(result)
+                    if output_path:
+                        console.print(f"[green]Image saved to {output_path}[/green]")
+                        return output_path
+                    return None
+                body = response.text or ""
+                if response.status_code in (503, 429) or "loading" in body.lower():
+                    wait = 20 + attempt * 10
+                    console.print(
+                        f"[yellow]HF model still loading (status {response.status_code}). "
+                        f"Waiting {wait}s and retrying...[/yellow]"
+                    )
+                    time.sleep(wait)
+                    continue
+                console.print(
+                    f"[yellow]Hugging Face returned status {response.status_code}: {body[:200]}[/yellow]"
+                )
+                return None
+            except requests.exceptions.Timeout:
+                console.print("[yellow]Hugging Face request timed out, retrying...[/yellow]")
+            except Exception as e:
+                console.print(f"[yellow]Hugging Face request error: {e}[/yellow]")
+                return None
+            time.sleep(5)
+        return None
+
+    def _generate_via_pollinations(self, context):
         import time
 
         from urllib.parse import quote

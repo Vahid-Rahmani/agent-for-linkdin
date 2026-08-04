@@ -27,3 +27,6 @@ class Settings:
     IMAGE_HEIGHT = int(os.getenv("IMAGE_HEIGHT", "1024"))
     IMAGE_MODEL = os.getenv("IMAGE_MODEL", "turbo")
     POLLINATIONS_API_KEY = os.getenv("POLLINATIONS_API_KEY", "")
+    HF_TOKEN = os.getenv("HF_TOKEN", "")
+    HF_MODEL = os.getenv("HF_MODEL", "stabilityai/stable-diffusion-3-medium-diffusers")
+    HF_API_URL = os.getenv("HF_API_URL", "https://router.huggingface.co/hf-inference/models")
