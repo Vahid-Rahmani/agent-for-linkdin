@@ -39,14 +39,17 @@ class CommentResponder:
                 await self.session.random_delay(2, 4)
 
                 reply_buttons = await self.page.query_selector_all(
-                    "button.comments-comment-item__reply-button"
+                    'button[aria-label*="Reply"], button.comments-comment-item__reply-button'
                 )
                 if reply_buttons:
                     await reply_buttons[0].click()
+                    await asyncio.sleep(2)
                     await self.session.random_delay(1, 2)
 
                 comment_box = await self.page.query_selector(
-                    "textarea.comments-comment-box__input"
+                    'textarea[aria-label*="Comment"], '
+                    'div[role="textbox"][contenteditable="true"], '
+                    'textarea.comments-comment-box__input'
                 )
                 if comment_box:
                     await comment_box.click()

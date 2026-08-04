@@ -30,26 +30,30 @@ class Publisher:
             await asyncio.sleep(3)
             await self.session.random_delay(3, 5)
 
-            start_post = await self.page.query_selector("button.share-box-feed-entry__trigger")
+            start_post = await self.page.query_selector('button[aria-label="Start a post"]')
             if start_post:
                 await start_post.click()
                 await asyncio.sleep(3)
                 await self.session.random_delay(2, 3)
 
             editor = await self.page.wait_for_selector(
-                "div.share-creation-state__editor, div.ql-editor, div[contenteditable='true']", timeout=30000
+                'div[role="textbox"][contenteditable="true"], '
+                'div.ql-editor[data-placeholder], '
+                'div[aria-label*="Text editor"], '
+                'div[aria-label*="Create a post"]',
+                timeout=30000
             )
             if editor:
                 await editor.click()
                 await asyncio.sleep(1)
                 await self.session.random_delay(1, 2)
 
-                await editor.fill("")
                 await self.page.keyboard.type(content, delay=30)
                 await self.session.random_delay(2, 3)
 
             post_button = await self.page.query_selector(
-                "button.share-actions__primary-action"
+                'button.share-actions__primary-action, '
+                'button[aria-label="Post"]'
             )
             if post_button:
                 await post_button.click()

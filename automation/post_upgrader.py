@@ -58,7 +58,11 @@ class PostUpgrader:
                 await self.session.random_delay(2, 3)
 
                 editor = await self.page.wait_for_selector(
-                    "div.share-creation-state__editor, div.ql-editor, div[contenteditable='true']", timeout=30000
+                    'div[role="textbox"][contenteditable="true"], '
+                    'div.ql-editor[data-placeholder], '
+                    'div[aria-label*="Text editor"], '
+                    'div[aria-label*="Edit"]',
+                    timeout=30000
                 )
                 if editor:
                     await editor.click()

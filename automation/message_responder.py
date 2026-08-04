@@ -40,15 +40,18 @@ class MessageResponder:
                 await self.session.random_delay(2, 4)
 
                 msg_input = await self.page.query_selector(
-                    "textarea.msg-form__contenteditable"
+                    'div[role="textbox"][contenteditable="true"], '
+                    'textarea[aria-label*="Message"], '
+                    'textarea.msg-form__contenteditable'
                 )
                 if msg_input:
                     await msg_input.click()
+                    await asyncio.sleep(1)
                     await self.page.keyboard.type(draft, delay=30)
                     await self.session.random_delay(1, 2)
 
                     send_btn = await self.page.query_selector(
-                        "button.msg-form__send-button"
+                        'button[aria-label*="Send"], button.msg-form__send-button'
                     )
                     if send_btn:
                         await send_btn.click()
