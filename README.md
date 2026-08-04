@@ -9,7 +9,7 @@ Automate your LinkedIn presence with AI-powered content generation, comment repl
 - **Post Tracking** - Monitor likes, comments, shares on your posts
 - **Comment Detection** - Automatically detect new comments on your posts
 - **Message Monitoring** - Check for new messages in your inbox
-- **AI Post Generation** - Generate professional LinkedIn posts using Google Gemini AI
+- **AI Post Generation** - Generate professional LinkedIn posts using OpenCode Zen AI
 - **Post Improvement** - Enhance existing posts for better engagement
 - **Auto Replies** - AI-draft replies to comments and messages
 - **Activity Reports** - Generate detailed reports on your LinkedIn activity
@@ -20,7 +20,7 @@ Automate your LinkedIn presence with AI-powered content generation, comment repl
 |-----------|------------|
 | Language | Python 3.14 |
 | Browser Automation | Playwright |
-| AI Provider | Google Gemini (free tier) |
+| AI Provider | OpenCode Zen (Big Pickle model, free) |
 | Database | SQLite |
 | CLI | Click + Rich |
 
@@ -42,14 +42,14 @@ playwright install chromium
 
 ### 3. Configure API key
 
-Edit the `.env` file and add your Google Gemini API key:
+Edit the `.env` file and add your OpenCode Zen API key:
 
 ```env
-GOOGLE_GEMINI_API_KEY=your_api_key_here
+OPENCODE_API_KEY=your_api_key_here
 LINKEDIN_PROFILE_URL=https://www.linkedin.com/in/vahid-rahmani-699944417
 ```
 
-> **Get a free API key:** Go to [Google AI Studio](https://aistudio.google.com/apikey), sign in with your Google account, and create an API key. No credit card required. Free tier includes 500+ requests/day.
+> **Get a free API key:** Go to [OpenCode Zen](https://opencode.ai/zen), sign up (no credit card required), and generate an API key. Free tier includes generous usage limits.
 
 ### 4. First-time login
 
@@ -122,7 +122,7 @@ agent/
 ├── database/
 │   └── local_db.py          # SQLite storage
 ├── ai/
-│   ├── client.py            # Google Gemini API wrapper
+│   ├── client.py            # OpenCode Zen API wrapper
 │   ├── post_generator.py    # Generate LinkedIn posts
 │   ├── post_improver.py     # Improve existing posts
 │   ├── reply_drafter.py     # Draft replies
@@ -156,7 +156,7 @@ agent/
 - [x] SQLite database for local storage
 
 ### Phase 3: AI Brain (Professional Content Generation)
-- [x] Google Gemini API integration (free tier, 500 req/day)
+- [x] OpenCode Zen API integration (free, Big Pickle model)
 - [x] Post generator with engineered prompts
 - [x] Post improver (engagement, algorithm optimization)
 - [x] Reply drafter for comments and messages
@@ -186,7 +186,7 @@ agent/
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `GOOGLE_GEMINI_API_KEY` | Your Google Gemini API key | (required) |
+| `OPENCODE_API_KEY` | Your OpenCode Zen API key | (required) |
 | `LINKEDIN_PROFILE_URL` | Your LinkedIn profile URL | Vahid Rahmani's profile |
 
 ## License
