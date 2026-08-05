@@ -6,15 +6,97 @@ from config.settings import Settings
 
 console = Console()
 
-SERIOUS_STYLE_PREFIX = (
-    "Professional realistic conceptual image, high detail, clean modern tech aesthetic, "
-    "soft studio lighting, corporate style, 4k quality, no text, no watermark"
+PALETTES = [
+    (
+        "dark theme with neon accents",
+        "deep charcoal-black background, electric cyan, hot magenta and lime green neon "
+        "accents, glowing node edges, high contrast",
+    ),
+    (
+        "light theme with professional pastels",
+        "soft off-white background, muted mint, lavender, peach and sky-blue pastel nodes, "
+        "gentle soft shadows, airy professional look",
+    ),
+    (
+        "vibrant gradient theme",
+        "deep navy background, rich blue-to-purple-to-orange gradient nodes, glossy highlights, "
+        "energetic modern look",
+    ),
+    (
+        "monochrome with a single accent",
+        "clean white background, elegant shades of slate gray and charcoal, one vivid coral "
+        "accent color for the path and numbers",
+    ),
+    (
+        "glassmorphism theme",
+        "dark frosted-glass background, translucent glass-like nodes with soft inner glows, "
+        "thin white borders, subtle blur effects",
+    ),
+]
+
+NODE_STYLES = [
+    (
+        "geometric nodes",
+        "sharp-edged angular hexagonal and rectangular cards arranged neatly along the path",
+    ),
+    (
+        "organic nodes",
+        "soft rounded blob-like cards with smooth flowing curves and gentle gradients",
+    ),
+    (
+        "3D depth nodes",
+        "cards rendered with realistic 3D depth, thick shadows, layered perspective and "
+        "beveled edges",
+    ),
+    (
+        "flat minimal nodes",
+        "clean flat 2D cards with generous padding, thin outlines and uncluttered layout",
+    ),
+]
+
+DEFAULT_STEPS = [
+    {"stage": "FOUNDATIONS", "icons": "Python, Git"},
+    {"stage": "CORE FEATURES", "icons": "Playwright, SQLite"},
+    {"stage": "AUTOMATION", "icons": "AI, GitHub API"},
+    {"stage": "TESTING", "icons": "Pytest, CI"},
+    {"stage": "DEPLOYMENT", "icons": "Docker, Linux"},
+    {"stage": "HARDENING", "icons": "Rate Limits, Logging"},
+]
+
+DESIGN_STATE_FILE = "image_style_state.json"
+MIN_STEPS = 5
+MAX_STEPS = 7
+
+ROADMAP_PROMPT_TEMPLATE = (
+    "{palette} {node_style}. "
+    "Create a clean, high-tech neon tech infographic: a horizontal flowchart of glowing "
+    "nodes connected by luminous neon flow lines and arrows, symbolizing a project "
+    "pipeline from start to finish. STRICTLY NO pyramids and NO abstract art.\n"
+    "STRICT RULES - MOST IMPORTANT REQUIREMENT:\n"
+    "- The image must contain ZERO text: no letters, no words, no numbers, no titles, "
+    "no labels, no captions, no typography, no rendered characters, no gibberish or "
+    "fake text of any kind anywhere in the image.\n"
+    "- Absolutely nothing is spelled out. Every element is communicated purely through "
+    "icons, shapes, colors and glow.\n"
+    "Required structure:\n"
+    "1. A clear, winding visual path or pipeline flowing left-to-right connecting the "
+    "sequential milestone nodes.\n"
+    "2. Distinct, prominent neon nodes or cards along the path. Each node contains ONLY "
+    "2-3 bold, stylized vector icons symbolically representing that step's tools and "
+    "concepts. No captions, no stage names, no numbers inside or around the nodes.\n"
+    "3. Smooth glowing connectors, gradient flow lines and subtle arrows linking the nodes.\n"
+    "4. A polished professional layout with strong visual hierarchy, consistent spacing "
+    "and elegant, modern composition.\n"
+    "Draw one node per icon set, in order, using only these symbolic icons:\n{steps_block}\n"
+    "Render every icon crisp, legible and visually striking - with no text anywhere in the image."
 )
 
-FUNNY_STYLE_PREFIX = (
-    "Witty humorous cartoon illustration, flat vector style, playful bright colors, "
-    "meme-inspired energy, funny relatable developer scene, no text, no watermark"
-)
+
+def _with_numbers(steps):
+    return [
+        {"number": index, "stage": step["stage"], "icons": step["icons"]}
+        for index, step in enumerate(steps, start=1)
+    ]
 
 
 MODEL_PRIORITY = ["turbo", "sana", "flux", "gptimage", "nanobanana"]
@@ -65,9 +147,9 @@ class ImageGenerator:
         return {}
 
     async def analyze_context(self, repo_summary):
-        console.print("[blue]Analyzing repo activity to pick image style...[/blue]")
+        console.print("[blue]Analyzing repo activity to build roadmap structure...[/blue]")
 
-        prompt = f"""Analyze the following GitHub repository activity summary and classify the mood/vibe:
+        prompt = f"""Analyze the following GitHub repository activity summary and extract a structured project roadmap:
 
 {repo_summary}
 
@@ -75,10 +157,13 @@ Return a JSON object with exactly these fields:
 - "style": either "serious" or "funny"
   (serious = technical milestone, clean feature release, production progress, professional work;
    funny = relatable bug, silly commit messages, funny naming, chaotic development, meme-worthy moments)
-- "keywords": a comma-separated list of 3-5 concrete visual keywords describing the main theme
-  (e.g. "github octopus, bug in a cage, code lines, rocket launch, coffee and laptop")
-- "image_prompt": one short English sentence (max 15 words) describing the scene for the image,
-  matching the chosen style
+  NOTE: this controls only the written post's tone, NOT the image design.
+- "steps": an array of 5-7 sequential milestones, ordered from first to last, each an object with:
+  - "icons": a comma-separated list of 2-3 real tool, technology or concept names that visually
+    symbolize that stage (e.g. "Python, Git", "Playwright, SQLite", "Docker, CI")
+
+Derive the icon sets from the actual commits, issues and tech visible in the summary.
+These icons are used ONLY to draw symbolic vector icons in an image - no text will be rendered.
 
 Output ONLY the JSON object, no extra text."""
 
@@ -87,10 +172,12 @@ Output ONLY the JSON object, no extra text."""
         if parsed:
             return parsed
 
+        palette, node_style = self._pick_design()
         return {
             "style": "serious",
-            "keywords": "software development, github, code",
-            "image_prompt": "A developer pushing code to a repository with a rocket launch",
+            "steps": _with_numbers(DEFAULT_STEPS),
+            "palette": palette,
+            "node_style": node_style,
         }
 
     def _parse_json(self, raw):
@@ -104,23 +191,98 @@ Output ONLY the JSON object, no extra text."""
             return None
         try:
             data = json.loads(match.group(0))
+            raw_steps = data.get("steps") or []
+            if not isinstance(raw_steps, list):
+                raw_steps = []
+            steps = []
+            for step in raw_steps:
+                if not isinstance(step, dict):
+                    continue
+                icons = (step.get("icons") or "").strip()
+                if icons:
+                    steps.append({"icons": icons})
+            if len(steps) < MIN_STEPS:
+                steps = DEFAULT_STEPS
+            elif len(steps) > MAX_STEPS:
+                steps = steps[:MAX_STEPS]
+            steps = _with_numbers(steps)
             style = data.get("style", "serious")
             if style not in ("serious", "funny"):
                 style = "serious"
+            palette, node_style = self._pick_design()
             return {
                 "style": style,
-                "keywords": data.get("keywords", ""),
-                "image_prompt": data.get("image_prompt", ""),
+                "steps": steps,
+                "palette": palette,
+                "node_style": node_style,
             }
         except Exception:
             return None
 
+    def _pick_design(self):
+        import json
+        import random
+
+        state_path = Path(self.settings.IMAGE_OUTPUT_DIR).parent / DESIGN_STATE_FILE
+        last = {}
+        try:
+            if state_path.exists():
+                last = json.loads(state_path.read_text(encoding="utf-8"))
+        except Exception:
+            last = {}
+
+        last_palette = last.get("palette")
+        last_node_style = last.get("node_style")
+
+        palette_candidates = [name for name, _ in PALETTES if name != last_palette]
+        if not palette_candidates:
+            palette_candidates = [name for name, _ in PALETTES]
+        node_candidates = [name for name, _ in NODE_STYLES if name != last_node_style]
+        if not node_candidates:
+            node_candidates = [name for name, _ in NODE_STYLES]
+
+        palette = random.choice(palette_candidates)
+        node_style = random.choice(node_candidates)
+
+        try:
+            state_path.parent.mkdir(parents=True, exist_ok=True)
+            state_path.write_text(
+                json.dumps({"palette": palette, "node_style": node_style}),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+        return palette, node_style
+
+    def _palette_desc(self, name):
+        for palette_name, description in PALETTES:
+            if palette_name == name:
+                return description
+        return name
+
+    def _node_style_desc(self, name):
+        for style_name, description in NODE_STYLES:
+            if style_name == name:
+                return description
+        return name
+
     def build_prompt(self, context):
-        style_prefix = (
-            SERIOUS_STYLE_PREFIX if context.get("style") == "serious" else FUNNY_STYLE_PREFIX
+        palette = self._palette_desc(context.get("palette") or PALETTES[0][0])
+        node_style = self._node_style_desc(context.get("node_style") or NODE_STYLES[0][0])
+        steps = context.get("steps") or _with_numbers(DEFAULT_STEPS)
+        if len(steps) < MIN_STEPS:
+            steps = _with_numbers(DEFAULT_STEPS)
+
+        steps_block = "\n".join(
+            f"- {step.get('icons') or ''}"
+            for step in steps
         )
-        base = context.get("image_prompt") or context.get("keywords", "github repository")
-        return f"{style_prefix}, {base}"
+
+        return ROADMAP_PROMPT_TEMPLATE.format(
+            palette=palette,
+            node_style=node_style,
+            steps_block=steps_block,
+        )
 
     def generate_image(self, context):
         prompt = self.build_prompt(context)
@@ -130,7 +292,7 @@ Output ONLY the JSON object, no extra text."""
         if self.settings.HF_TOKEN:
             console.print(
                 f"[blue]Generating image via Hugging Face ({self.settings.HF_MODEL}, "
-                f"{context.get('style')} style)...[/blue]"
+                f"palette '{context.get('palette')}', {context.get('node_style')})...[/blue]"
             )
             result = self._generate_via_hf(prompt, output_dir)
             if result:
@@ -158,7 +320,10 @@ Output ONLY the JSON object, no extra text."""
                 "height": self.settings.IMAGE_HEIGHT,
                 "num_inference_steps": 28,
                 "guidance_scale": 5.0,
-                "negative_prompt": "blurry, low quality, text, watermark, logo",
+                "negative_prompt": (
+                    "blurry, low quality, watermark, logo, abstract art, concept art, "
+                    "text, letters, words, numbers, typography, labels, captions, titles, gibberish"
+                ),
             },
             "options": {"wait_for_model": True},
         }
@@ -207,7 +372,8 @@ Output ONLY the JSON object, no extra text."""
 
         model = self._pick_model()
         console.print(
-            f"[blue]Generating image via Pollinations.ai ({context.get('style')} style, {model})...[/blue]"
+            f"[blue]Generating image via Pollinations.ai (palette '{context.get('palette')}', "
+            f"{context.get('node_style')}, {model})...[/blue]"
         )
 
         deadline = time.time() + TOTAL_DEADLINE
@@ -224,10 +390,14 @@ Output ONLY the JSON object, no extra text."""
                 for width, height in size_candidates:
                     if time.time() > deadline or stopped:
                         break
+                    negative = (
+                        "text, letters, words, numbers, typography, labels, captions, titles, gibberish"
+                    )
                     url = (
                         f"https://image.pollinations.ai/prompt/{quote(prompt)}"
                         f"?width={width}"
                         f"&height={height}"
+                        f"&negative={quote(negative)}"
                         f"&nologo=true&model={m}"
                     )
 
