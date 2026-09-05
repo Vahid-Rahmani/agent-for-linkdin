@@ -1,225 +1,117 @@
-# LinkedIn AI Agent
+# LinkedIn Activity Assistant
 
-Automate your LinkedIn presence with AI-powered content generation, comment replies, message responses, and activity reporting.
+> A local Python tool for monitoring a LinkedIn profile, turning verified GitHub activity into draft content, preparing replies, generating activity reports, and publishing through a browser session.
 
-## Features
+<p align="center">
+  <a href="https://github.com/Vahid-Rahmani/agent-for-linkdin"><img src="https://img.shields.io/badge/status-personal%20project-2563eb" alt="Personal project"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB" alt="Python"></a>
+  <a href="https://playwright.dev/python/"><img src="https://img.shields.io/badge/browser-Playwright-2EAD33" alt="Playwright"></a>
+  <a href="https://github.com/Vahid-Rahmani/agent-for-linkdin/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e" alt="MIT license"></a>
+</p>
 
-- **LinkedIn Authentication** - Secure session persistence (login once, use forever)
-- **Profile Monitoring** - Track profile views, search appearances, connections
-- **Post Tracking** - Monitor likes, comments, shares on your posts
-- **Comment Detection** - Automatically detect new comments on your posts
-- **Message Monitoring** - Check for new messages in your inbox
-- **AI Post Generation** - Auto-generate posts from your live GitHub activity using OpenCode Zen AI
-- **Context-Aware Images** - Generates a matching image (serious or funny style) via Hugging Face, attaches it to every post
-- **Post Improvement** - Enhance existing posts for better engagement
-- **Auto Replies** - AI-draft replies to comments and messages
-- **Activity Reports** - Generate detailed reports on your LinkedIn activity
-- **Zero-Input Automation** - No `[y/n]` prompts; `post` and `run` are fully autonomous
+## Purpose
 
-## Tech Stack
+This project keeps LinkedIn workflow data local while connecting three practical areas: profile activity, GitHub project activity, and content operations. It is designed for the account owner, not for bulk messaging or unsolicited outreach.
 
-| Component | Technology |
-|-----------|------------|
-| Language | Python 3.14 |
-| Browser Automation | Playwright |
-| AI Provider | OpenCode Zen (Big Pickle model, free) |
-| Database | SQLite |
-| CLI | Click + Rich |
+## Workflow map
 
-## Installation
-
-### 1. Clone the repository
-
-```bash
-git clone git@github.com:Vahid-Rahmani/agent-for-linkdin.git
-cd agent-for-linkdin
+```mermaid
+flowchart LR
+    G[GitHub activity] --> C[GitHub client]
+    L[LinkedIn session] --> M[Profile / post / comment / message monitors]
+    C --> P[Post and reply preparation]
+    M --> P
+    P --> A[Content and image services]
+    A --> R[Local review / report]
+    R --> U[Publisher and responders]
+    U --> L
+    M --> DB[(Local SQLite database)]
+    R --> DB
 ```
 
-### 2. Install dependencies
+## Capabilities
+
+- Persistent Playwright session for manual first-time login.
+- Profile, post, comment, and message activity monitoring.
+- GitHub repository activity retrieval for project-based content.
+- Post generation and improvement with the configured OpenAI-compatible provider.
+- Context-matched image generation with fallback providers.
+- Reply drafting for comments and messages.
+- Local SQLite history and Rich CLI output.
+- Activity reports and a full workflow command.
+
+## Safety boundary
+
+The automation commands can publish or respond without an interactive approval prompt. Run them only for your own account, review generated content and recipients, keep activity within LinkedIn policies, and start with `monitor` or `report` before enabling publishing. Rate limits in the application reduce frequency; they do not replace human oversight.
+
+## Setup
 
 ```bash
+git clone https://github.com/Vahid-Rahmani/agent-for-linkdin.git
+cd agent-for-linkdin
+python -m venv .venv
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 3. Configure API keys
-
-Edit the `.env` file and add your OpenCode Zen API key and GitHub token:
+Create a local `.env` file. Keep it out of Git:
 
 ```env
-OPENCODE_API_KEY=your_api_key_here
-LINKEDIN_PROFILE_URL=https://www.linkedin.com/in/vahid-rahmani-699944417
-GITHUB_TOKEN=github_pat_xxxxxxxxxxxxxxxx
+OPENCODE_API_KEY=your_provider_key
+LINKEDIN_PROFILE_URL=https://www.linkedin.com/in/vahid-rahmani-699944417/
+GITHUB_TOKEN=your_read_only_github_token
 GITHUB_REPO=Vahid-Rahmani/agent-for-linkdin
-HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx
+HF_TOKEN=optional_image_provider_token
 ```
 
-> **Get a free API key:** Go to [OpenCode Zen](https://opencode.ai/zen), sign up (no credit card required), and generate an API key. Free tier includes generous usage limits.
->
-> **GitHub token:** Create a Personal Access Token at GitHub Settings → Developer settings → Personal access tokens (fine-grained, read access to your repo) so the agent can fetch your latest commits and issues.
->
-> **Hugging Face token (recommended):** Images are generated by [Hugging Face Inference](https://huggingface.co/inference-api) using the free `hf-inference` provider (`stabilityai/stable-diffusion-3-medium-diffusers`, no credits needed). Create a **Read**-type token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) and add it to `.env`:
->
-> ```env
-> HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx
-> ```
->
-> If Hugging Face fails, the agent automatically falls back to [Pollinations.ai](https://pollinations.ai) (free anonymous tier, square `1024x1024` only) and finally to a locally-generated placeholder so every post still gets a photo.
+The OpenCode-compatible endpoint and model are configured in `config/settings.py`. Use provider terms and quotas that apply to your account. Never commit API keys, browser state, cookies, database files, or generated private messages.
 
-### 4. First-time login
+## CLI
 
 ```bash
 python main.py login
-```
-
-A browser window will open. Log in to LinkedIn manually. After logging in, press Enter in the terminal. Your session will be saved for future use.
-
-## Usage
-
-### CLI Commands
-
-```bash
-# First-time login
-python main.py login
-
-# Check LinkedIn activity (profile, posts, comments, messages)
 python main.py monitor
-
-# Generate and publish a LinkedIn post from your GitHub activity (automatic)
-python main.py post
-
-# Reply to pending comments and messages
-python main.py reply
-
-# Improve an existing post
-python cli.py improve <post_url>
-
-# Generate activity report
 python main.py report
-
-# Run full automation cycle (monitor -> reply -> auto-post -> report)
+python main.py post
+python main.py reply
 python main.py run
 ```
 
-### Using Click CLI
+Use `python cli.py --help` for the secondary Click interface. The first login opens Chromium so the account owner can authenticate manually; session data is then stored locally for subsequent runs.
 
-```bash
-# Alternative CLI interface
-python cli.py login
-python cli.py monitor
-python cli.py post
-python cli.py reply
-python cli.py improve <url> --focus engagement
-python cli.py report
-python cli.py run
+## Project structure
+
+```text
+.
+├── ai/          # content, reply, improvement and image generation
+├── auth/        # Playwright session and login handling
+├── automation/  # publishing and response actions
+├── config/      # environment-backed settings and selectors
+├── database/    # local SQLite persistence
+├── github/      # GitHub activity client
+├── models/      # post, comment and message models
+├── monitor/     # LinkedIn activity monitors
+├── reports/     # activity report generation
+├── cli.py       # Click-based interface
+└── main.py      # primary command entry point
 ```
 
-The `post` and `run` commands require zero input: they fetch your repo's recent commits/issues via the GitHub API, classify the mood (serious vs funny), generate the post text plus a matching image, and publish automatically.
+## Roadmap
 
-## Project Structure
-
-```
-agent/
-├── config/
-│   ├── settings.py          # API keys, credentials, config
-│   └── constants.py         # LinkedIn selectors, URLs
-├── auth/
-│   ├── session_manager.py   # Playwright session persistence
-│   └── login_handler.py     # LinkedIn login flow
-├── monitor/
-│   ├── profile_monitor.py   # Profile views, connections
-│   ├── post_monitor.py      # Post metrics tracking
-│   ├── comment_monitor.py   # New comments detection
-│   └── message_monitor.py   # New messages detection
-├── models/
-│   ├── comment.py
-│   ├── message.py
-│   └── post.py
-├── database/
-│   └── local_db.py          # SQLite storage
-├── ai/
-│   ├── client.py            # OpenCode Zen API wrapper
-│   ├── post_generator.py    # Generate LinkedIn posts (incl. from GitHub)
-│   ├── image_generator.py   # Context-aware image generation (Hugging Face → Pollinations → placeholder)
-│   ├── post_improver.py     # Improve existing posts
-│   ├── reply_drafter.py     # Draft replies
-│   └── prompts.py           # AI prompts
-├── github/
-│   ├── client.py            # GitHub PAT client (commits, issues, repo info)
-│   └── __init__.py
-├── automation/
-│   ├── publisher.py         # Publish posts
-│   ├── comment_responder.py # Reply to comments
-│   ├── message_responder.py # Reply to messages
-│   └── post_upgrader.py     # Edit existing posts
-├── reports/
-│   └── report_generator.py  # Activity reports
-├── cli.py                   # Click CLI interface
-├── main.py                  # Main entry point
-├── requirements.txt
-├── .env                     # API keys (gitignored)
-└── .gitignore
-```
-
-## Development Plan
-
-### Phase 1: Setup and LinkedIn Authentication
-- [x] Install Python and Playwright
-- [x] Session storage with user_data_dir (bypass CAPTCHAs/2FA)
-- [x] Manual login test
-
-### Phase 2: Code and Project Monitoring Module
-- [x] Profile monitor (views, search appearances, connections)
-- [x] Post monitor (likes, comments, shares)
-- [x] Comment monitor (detect new comments)
-- [x] Message monitor (detect new messages)
-- [x] SQLite database for local storage
-
-### Phase 3: AI Brain (Professional Content Generation)
-- [x] Gmini Free API
-- [x] Post generator with engineered prompts
-- [x] Post improver (engagement, algorithm optimization)
-- [x] Reply drafter for comments and messages
-- [x] GitHub activity auto-posting (commits, issues → post + image)
-
-### Phase 4: Publishing and Interaction Automation
-- [x] Playwright post publishing
-- [x] Comment auto-reply with AI drafts
-- [x] Message auto-reply with AI drafts
-- [x] Post editing/upgrading
-
-### Phase 5: Final Integration and Orchestration
-- [x] CLI tool with multiple commands
-- [x] Full automation cycle (`python main.py run`)
-- [x] Activity report generation
-
-## Safety Features
-
-- **Session Persistence** - Login once, reuse cookies (avoids repeated logins)
-- **Fully Autonomous** - No approval prompts; runs unattended
-- **Rate Limiting** - Max 10 comments/hour, 20 messages/hour
-- **Human-like Behavior** - Random delays, variable typing speed, smooth scrolling to reduce detection
-- **Random Delays** - 2-5 second delays between actions
-- **Anti-Detection** - Custom user agent, disabled automation flags
-- **Local Database** - All data stored locally (no external servers)
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENCODE_API_KEY` | Your OpenCode Zen API key | (required) |
-| `LINKEDIN_PROFILE_URL` | Your LinkedIn profile URL | Vahid Rahmani's profile |
-| `GITHUB_TOKEN` | GitHub PAT (repo read) for auto-posting | (required) |
-| `GITHUB_REPO` | Repo to fetch activity from | `Vahid-Rahmani/agent-for-linkdin` |
-| `HF_TOKEN` | Hugging Face token (Read type) for image generation | (recommended) |
-| `HF_MODEL` | Hugging Face image model | `stabilityai/stable-diffusion-3-medium-diffusers` |
-| `IMAGE_MODEL` | Pollinations fallback model | `turbo` |
-| `IMAGE_WIDTH` / `IMAGE_HEIGHT` | Generated image size | `1024` / `1024` |
-
-## License
-
-MIT License
+- [x] Local session and activity-monitoring foundation
+- [x] GitHub-to-content workflow
+- [x] Post, reply, report, and image-generation modules
+- [ ] Explicit review queue before publish/reply
+- [ ] Provider health checks and retry visibility
+- [ ] Automated tests with browser fixtures
+- [ ] Safer per-action consent and audit log UI
 
 ## Author
 
-**Vahid Rahmani** - [LinkedIn](https://www.linkedin.com/in/vahid-rahmani-699944417)
+[Vahid Rahmani](https://www.linkedin.com/in/vahid-rahmani-699944417/) · [GitHub](https://github.com/Vahid-Rahmani) · [Portfolio](https://vahid-portfolio-three.vercel.app/)
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
